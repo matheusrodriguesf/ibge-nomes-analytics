@@ -1,0 +1,19 @@
+<main class="frequencia-demo">
+  <h1>Frequência temporal do nome: {{ nomeAtual }}</h1>
+  <p>Visualizações da evolução do nome ao longo dos períodos.</p>
+
+  <section class="chart-card">
+    <h2>Linha - Evolução temporal</h2>
+    <div #timelineChartContainer class="chart-container"></div>
+  </section>
+
+  <section class="chart-card">
+    <h2>Área - Frequência acumulada</h2>
+    <div #areaChartContainer class="chart-container"></div>
+  </section>
+
+  <section class="chart-card">
+    <h2>Barras - Por período</h2>
+    <div #barTimeChartContainer class="chart-container"></div>
+  </section>
+</main>

@@ -24,12 +24,12 @@ public class CensoNomeController {
 
     CensoNomeService censoIbgeNomeService;
 
-    @GetMapping("/nomes/ranking")
+    @GetMapping("/ranking-nomes")
     public ResponseEntity<List<ResultadoRanking>> getRankingNome() {
         return ResponseEntity.ok(censoIbgeNomeService.getRankingNome());
     }
 
-    @GetMapping("/nomes/{nome}")
+    @GetMapping("/frequencia-nomes/{nome}")
     public ResponseEntity<List<ResultadoNomeFrequencia>> getFrequenciaNome(@PathVariable String nome) {
         return ResponseEntity.ok(censoIbgeNomeService.getFrequenciaNome(nome));
     }

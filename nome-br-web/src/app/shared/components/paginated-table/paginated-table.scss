@@ -1,0 +1,27 @@
+.table-wrapper {
+	overflow-x: auto;
+}
+
+.data-table {
+	width: 100%;
+}
+
+.actions-cell {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.25rem;
+}
+
+.align-center {
+	text-align: center;
+}
+
+.align-end {
+	text-align: right;
+}
+
+.empty-row {
+	text-align: center;
+	padding: 24px;
+}

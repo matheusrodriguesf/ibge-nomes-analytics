@@ -15,6 +15,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/censos")
@@ -30,8 +31,10 @@ public class CensoNomeController {
     }
 
     @GetMapping("/frequencia-nomes/{nome}")
-    public ResponseEntity<List<ResultadoNomeFrequencia>> getFrequenciaNome(@PathVariable String nome) {
-        return ResponseEntity.ok(censoIbgeNomeService.getFrequenciaNome(nome));
+    public ResponseEntity<List<ResultadoNomeFrequencia>> getFrequenciaNome(
+            @PathVariable String nome,
+            @RequestParam(required = false) String sexo) {
+        return ResponseEntity.ok(censoIbgeNomeService.getFrequenciaNome(nome, sexo));
     }
 
 }

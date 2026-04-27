@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import br.com.arcelino.nomebr.model.ResultadoNomeFrequencia;
 import br.com.arcelino.nomebr.model.ResultadoRanking;
@@ -16,6 +17,7 @@ public interface CensoIbgeNomeClient {
     List<ResultadoRanking> getRankingNome();
 
     @GetMapping("/censos/nomes/{nome}")
-    List<ResultadoNomeFrequencia> getFrequenciaNome(@PathVariable String nome);
+    List<ResultadoNomeFrequencia> getFrequenciaNome(@PathVariable String nome,
+            @RequestParam(required = false) String sexo);
 
 }

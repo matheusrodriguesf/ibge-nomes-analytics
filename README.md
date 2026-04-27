@@ -50,3 +50,29 @@ npm start
 ```
 O frontend estará disponível em `http://localhost:4200`.
 
+
+## Screenshots e demonstração
+
+As imagens abaixo ilustram as principais telas da aplicação web:
+
+### Home
+
+![Home](docs/images/home.png)
+*Tela inicial da aplicação, onde o usuário pode iniciar suas pesquisas sobre nomes, acessar funcionalidades e visualizar um resumo do sistema.*
+
+### Visualização de Ranking
+
+![RankingTabela](docs/images/ranking-tabela.png)
+*Exemplo de tabela exibindo o ranking dos nomes mais frequentes.*
+
+![RankingGrafico](docs/images/ranking-graficos.png)
+*Visualização gráfica do ranking de nomes, facilitando a análise visual e comparações entre diferentes nomes.*
+
+### Visualização de Frequência Temporal
+
+![FrequenciaTemporalTabela](docs/images/frequencia-temporal-tabela.png)
+*Tabela mostrando a frequência de um nome ao longo do tempo.*
+
+![FrequenciaTemporalGrafico](docs/images/frequencia-temporal-grafico.png)
+*Gráfico de linha apresentando a evolução de um nome ao longo do tempo, facilitando a visualização de picos e quedas de popularidade.*
+

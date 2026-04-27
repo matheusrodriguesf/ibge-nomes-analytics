@@ -18,19 +18,19 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 
 @RestController
-@RequestMapping("/localidades")
+@RequestMapping("/localidades/estados")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public class LocalidadeEstadoController {
 
     LocalidadeEstadoService localidadeEstadoService;
 
-    @GetMapping("/estados")
+    @GetMapping
     public ResponseEntity<List<EstadoResumo>> getAllEstados() {
         return ResponseEntity.ok(localidadeEstadoService.getEstados());
     }
 
-    @GetMapping("/distrito/{estadoId}")
+    @GetMapping("/{estadoId}/distritos")
     public ResponseEntity<List<DistritoResumo>> getDistritosByEstado(@PathVariable Integer estadoId) {
         return ResponseEntity.ok(localidadeEstadoService.getDistritosByEstado(estadoId));
     }

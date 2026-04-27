@@ -6,7 +6,7 @@
       <p class="page-description">Pesquise um nome para visualizar sua evolução ao longo dos períodos históricos.</p>
     </div>
 
-    <form class="filters-form" [formGroup]="searchForm" (ngSubmit)="onSearch()">
+    <form class="filters-form" [formGroup]="searchForm">
       <div class="filters-grid">
         <mat-form-field class="search-field">
           <mat-label>Digite o nome que deseja consultar</mat-label>
@@ -47,7 +47,7 @@
         </mat-form-field>
 
         <div class="form-actions">
-          <button type="submit" mat-flat-button>Pesquisar</button>
+          <button type="button" mat-flat-button (click)="onSearch()">Pesquisar</button>
           <button type="button" mat-stroked-button (click)="onClear()">Limpar</button>
         </div>
       </div>

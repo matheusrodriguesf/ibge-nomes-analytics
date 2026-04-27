@@ -24,5 +24,29 @@ O frontend é uma aplicação **Angular** responsável por consumir a API do bac
 - Visualização de dados e gráficos
 - Interface simples para pesquisa de nomes
 
+
 O código-fonte está localizado em `nome-br-web/`.
+
+---
+
+## Como subir a aplicação
+
+### 1. Subir o backend (Spring Boot)
+
+```bash
+cd nome-br-api
+./mvnw spring-boot:run
+```
+O backend estará disponível em `http://localhost:8080`.
+
+### 2. Subir o frontend (Angular)
+
+Em outro terminal:
+
+```bash
+cd nome-br-web
+npm install
+npm start
+```
+O frontend estará disponível em `http://localhost:4200`.
 

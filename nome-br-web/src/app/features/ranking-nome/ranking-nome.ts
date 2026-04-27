@@ -22,6 +22,7 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { LocalidadeService } from '../../services/localidade.service';
 import { SelectEstadoItem } from '../../models/select-estado-item';
 import { SelectDistritoItem } from '../../models/select-distrito-item';
@@ -44,6 +45,7 @@ type SexoOption = 'M' | 'F';
     MatFormFieldModule,
     MatSelectModule,
     MatButtonModule,
+    MatProgressSpinnerModule,
     PaginatedTable,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -45,7 +45,12 @@
 
         <div class="form-actions">
           <button type="button" mat-flat-button (click)="onApplyFilters()" [disabled]="isLoading">
+            @if (isLoading) {
+            <mat-spinner diameter="18" class="btn-spinner"></mat-spinner>
+            Pesquisando...
+            } @else {
             Pesquisar
+            }
           </button>
           <button type="button" mat-stroked-button (click)="onClearFilters()" [disabled]="isLoading">
             Limpar
@@ -69,7 +74,12 @@
     </div>
   </header>
 
-  <section class="content-card">
+  <section class="content-card" [class.is-loading]="isLoading">
+    @if (isLoading) {
+    <div class="loading-overlay" role="status" aria-label="Carregando dados">
+      <mat-spinner diameter="48"></mat-spinner>
+    </div>
+    }
     <div class="section-heading">
       <div>
         <h2>Lista completa</h2>

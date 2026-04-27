@@ -3,8 +3,8 @@ package br.com.arcelino.nomebr.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import br.com.arcelino.nomebr.model.ResultadoNomeFrequencia;
-import br.com.arcelino.nomebr.model.ResultadoRanking;
+import br.com.arcelino.nomebr.model.censo.ResultadoNomeFrequencia;
+import br.com.arcelino.nomebr.model.censo.ResultadoRanking;
 import br.com.arcelino.nomebr.service.CensoNomeService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

@@ -4,9 +4,9 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import br.com.arcelino.nomebr.client.CensoIbgeNomeClient;
-import br.com.arcelino.nomebr.model.ResultadoNomeFrequencia;
-import br.com.arcelino.nomebr.model.ResultadoRanking;
+import br.com.arcelino.nomebr.client.ibge.censo.CensoIbgeNomeClient;
+import br.com.arcelino.nomebr.model.censo.ResultadoNomeFrequencia;
+import br.com.arcelino.nomebr.model.censo.ResultadoRanking;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;

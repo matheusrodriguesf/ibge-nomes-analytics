@@ -1,4 +1,4 @@
-package br.com.arcelino.nomebr.model;
+package br.com.arcelino.nomebr.model.censo;
 
 import java.util.List;
 

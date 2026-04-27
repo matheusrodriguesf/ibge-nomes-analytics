@@ -1,4 +1,4 @@
-package br.com.arcelino.nomebr.client;
+package br.com.arcelino.nomebr.client.ibge.censo;
 
 import java.util.List;
 
@@ -7,16 +7,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import br.com.arcelino.nomebr.model.ResultadoNomeFrequencia;
-import br.com.arcelino.nomebr.model.ResultadoRanking;
+import br.com.arcelino.nomebr.model.censo.ResultadoNomeFrequencia;
+import br.com.arcelino.nomebr.model.censo.ResultadoRanking;
 
-@FeignClient(name = "censoIbge", url = "${ibge.api.url}")
+@FeignClient(name = "censoIbge", url = "${ibge.api.url}", path = "/v2/censos/nomes")
 public interface CensoIbgeNomeClient {
 
-    @GetMapping("/censos/nomes/ranking")
+    @GetMapping("/ranking")
     List<ResultadoRanking> getRankingNome();
 
-    @GetMapping("/censos/nomes/{nome}")
+    @GetMapping("/{nome}")
     List<ResultadoNomeFrequencia> getFrequenciaNome(@PathVariable String nome,
             @RequestParam(required = false) String sexo);
 

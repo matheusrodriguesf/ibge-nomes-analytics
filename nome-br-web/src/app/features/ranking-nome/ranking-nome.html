@@ -1,19 +1,71 @@
-<main class="chart-demo">
-  <h1>Ranking de nomes no Brasil</h1>
-  <p>Visualizações do resultado de frequência por nome.</p>
+<div class="ranking-page">
+  <header class="page-header">
+    <div class="page-header__content">
+      <p class="page-eyebrow">Análise nacional</p>
+      <h1>Ranking de nomes no Brasil</h1>
+      <p class="page-description">
+        Ranking dos <strong>{{ tableData.length }}</strong> nomes mais frequentes no país.
+      </p>
+    </div>
 
-  <section class="chart-card">
-    <h2>Barras (Top 10)</h2>
-    <div #barChartContainer class="chart-container"></div>
+    <div class="summary-grid">
+
+      <article class="summary-card">
+        <span class="summary-card__label">Nome líder</span>
+        <strong class="summary-card__value">{{ primeiroNome }}</strong>
+      </article>
+
+      <article class="summary-card">
+        <span class="summary-card__label">Frequência líder</span>
+        <strong class="summary-card__value">{{ primeiraFrequencia }}</strong>
+      </article>
+
+    </div>
+  </header>
+
+  <section class="content-card">
+    <div class="section-heading">
+      <div>
+        <h2>Lista completa</h2>
+      </div>
+    </div>
+
+    <app-paginated-table
+      [data]="pagedTableData"
+      [columns]="columns"
+      [length]="tableData.length"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      [pageSizeOptions]="pageSizeOptions"
+      emptyMessage="Nenhum ranking disponível."
+      (pageChange)="onPageChange($event)"
+    ></app-paginated-table>
   </section>
 
-  <section class="chart-card">
-    <h2>Linha por ranking</h2>
-    <div #lineChartContainer class="chart-container"></div>
-  </section>
+  <section class="content-card">
+    <div class="section-heading">
+      <div>
+        <h2>Visualizações</h2>
+        <p>Nomes com maior destaque no ranking. </p>
+      </div>
+    </div>
 
-  <section class="chart-card">
-    <h2>Donut (Top 5)</h2>
-    <div #donutChartContainer class="chart-container"></div>
+    <div class="charts-grid">
+      <article class="chart-card chart-card--wide">
+        <div class="chart-card__header">
+          <h3> Gráfico de Barras</h3>
+          <p>Comparação dos top 10 nomes mais frequentes.</p>
+        </div>
+        <div #barChartContainer class="chart-container"></div>
+      </article>
+
+      <article class="chart-card chart-card--wide">
+        <div class="chart-card__header">
+          <h3>Gráfico Donut</h3>
+          <p>Participação relativa dos 5 nomes mais frequentes.</p>
+        </div>
+        <div #donutChartContainer class="chart-container"></div>
+      </article>
+    </div>
   </section>
-</main>
+</div>

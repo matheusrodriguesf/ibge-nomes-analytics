@@ -1,7 +1,21 @@
-import { AfterViewInit, Component, ElementRef, inject, ViewChild } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  inject,
+  viewChild,
+} from '@angular/core';
 import * as d3 from 'd3';
 import { CensoNomeService } from '../../services/censo.nome.service';
 import { RankingNomeItem } from '../../models/resultado-nome-ranking';
+import {
+  PaginatedTable,
+  PaginatedTableColumn,
+  TableValue,
+} from '../../shared/components/paginated-table/paginated-table';
+import { PageEvent } from '@angular/material/paginator';
 
 type ChartDatum = {
   name: string;
@@ -13,27 +27,52 @@ type ChartDatum = {
   selector: 'app-ranking-nome',
   standalone: true,
   templateUrl: './ranking-nome.html',
-  styleUrl: './ranking-nome.scss'
+  styleUrl: './ranking-nome.scss',
+  imports: [PaginatedTable],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RankingNomeComponent implements AfterViewInit {
-  @ViewChild('barChartContainer', { static: true })
-  private barChartContainer?: ElementRef<HTMLDivElement>;
+export class RankingNomeComponent {
 
-  @ViewChild('lineChartContainer', { static: true })
-  private lineChartContainer?: ElementRef<HTMLDivElement>;
+  private readonly numberFormatter = new Intl.NumberFormat('pt-BR');
 
-  @ViewChild('donutChartContainer', { static: true })
-  private donutChartContainer?: ElementRef<HTMLDivElement>;
+  private readonly barChartContainer = viewChild<ElementRef<HTMLDivElement>>('barChartContainer');
+  private readonly donutChartContainer = viewChild<ElementRef<HTMLDivElement>>('donutChartContainer');
 
   private chartData: ChartDatum[] = [];
 
+  readonly columns: PaginatedTableColumn[] = [
+    { key: 'ranking', header: 'Ranking', align: 'end' },
+    { key: 'nome', header: 'Nome' },
+    { key: 'frequencia', header: 'Frequência', align: 'end' },
+  ];
+  readonly pageSizeOptions: number[] = [5, 10, 25, 100];
+
+  pageSize = 10;
+  pageIndex = 0;
+  topNomes: RankingNomeItem[] = [];
+  tableData: Record<string, TableValue>[] = [];
+  pagedTableData: Record<string, TableValue>[] = [];
+
   private readonly censoNomeService = inject(CensoNomeService);
+  private readonly changeDetectorRef = inject(ChangeDetectorRef);
+
+  constructor() {
+    afterNextRender(() => {
+      void this.loadRankingNome();
+    });
+  }
 
   private async loadRankingNome(): Promise<void> {
     const rankingResponse = await this.censoNomeService.getRankingNome();
-    const topNomes = rankingResponse[0]?.resultado ?? [];
-
-    this.chartData = topNomes
+    const [primeiro] = Array.isArray(rankingResponse) ? rankingResponse : [];
+    const resultado = Array.isArray(primeiro?.resultado) ? primeiro.resultado : [];
+    this.topNomes = resultado;
+    this.tableData = resultado.map((item: RankingNomeItem) => ({
+      ranking: item.ranking,
+      nome: item.nome,
+      frequencia: item.frequencia,
+    }));
+    this.chartData = [...resultado]
       .sort((first: RankingNomeItem, second: RankingNomeItem) => first.ranking - second.ranking)
       .slice(0, 10)
       .map((item: RankingNomeItem) => ({
@@ -41,29 +80,48 @@ export class RankingNomeComponent implements AfterViewInit {
         total: item.frequencia,
         rank: item.ranking,
       }));
-
+    this.pageIndex = 0;
+    this.updatePagedData();
+    this.changeDetectorRef.detectChanges();
     this.renderCharts();
+
+  }
+  onPageChange(event: PageEvent): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.updatePagedData();
   }
 
-  ngAfterViewInit(): void {
-    void this.loadRankingNome();
+  get primeiroNome(): string {
+    return this.topNomes[0]?.nome ?? '—';
+  }
+
+  get primeiraFrequencia(): string {
+    return this.formatNumber(this.topNomes[0]?.frequencia ?? 0);
+  }
+
+  formatNumber(value: number): string {
+    return this.numberFormatter.format(value);
+  }
+
+  private updatePagedData(): void {
+    const startIndex = this.pageIndex * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    this.pagedTableData = this.tableData.slice(startIndex, endIndex);
   }
 
   private renderCharts(): void {
-    const barContainer = this.barChartContainer?.nativeElement;
-    const lineContainer = this.lineChartContainer?.nativeElement;
-    const donutContainer = this.donutChartContainer?.nativeElement;
+    const barContainer = this.barChartContainer()?.nativeElement;
+    const donutContainer = this.donutChartContainer()?.nativeElement;
 
-    if (!barContainer || !lineContainer || !donutContainer || this.chartData.length === 0) {
+    if (!barContainer || !donutContainer || this.chartData.length === 0) {
       return;
     }
 
     d3.select(barContainer).selectAll('*').remove();
-    d3.select(lineContainer).selectAll('*').remove();
     d3.select(donutContainer).selectAll('*').remove();
 
     this.renderBarChart(barContainer);
-    this.renderLineChart(lineContainer);
     this.renderDonutChart(donutContainer);
   }
 
@@ -173,78 +231,6 @@ export class RankingNomeComponent implements AfterViewInit {
       .attr('y', height - 6)
       .attr('text-anchor', 'middle')
       .text('Top 10 nomes (ranking)');
-  }
-
-  private renderLineChart(container: HTMLDivElement): void {
-    const width = 760;
-    const height = 320;
-    const margin = { top: 20, right: 20, bottom: 40, left: 70 };
-
-    const svg = d3
-      .select(container)
-      .append('svg')
-      .attr('viewBox', `0 0 ${width} ${height}`)
-      .style('width', '100%')
-      .style('height', 'auto')
-      .style('display', 'block');
-
-    const x = d3
-      .scaleLinear()
-      .domain(d3.extent(this.chartData, (item: ChartDatum) => item.rank) as [number, number])
-      .range([margin.left, width - margin.right]);
-
-    const y = d3
-      .scaleLinear()
-      .domain([0, d3.max(this.chartData, (item: ChartDatum) => item.total) ?? 0])
-      .nice()
-      .range([height - margin.bottom, margin.top]);
-
-    const lineGenerator = d3
-      .line<ChartDatum>()
-      .x((item: ChartDatum) => x(item.rank))
-      .y((item: ChartDatum) => y(item.total));
-
-    svg
-      .append('g')
-      .attr('transform', `translate(0, ${height - margin.bottom})`)
-      .call(d3.axisBottom(x).ticks(this.chartData.length).tickFormat(d3.format('d')));
-
-    svg
-      .append('g')
-      .attr('transform', `translate(${margin.left}, 0)`)
-      .call(d3.axisLeft(y).ticks(6).tickFormat(d3.format('.2s')));
-
-    svg
-      .append('path')
-      .datum(this.chartData)
-      .attr('fill', 'none')
-      .attr('stroke', 'currentColor')
-      .attr('stroke-width', 2)
-      .attr('d', lineGenerator);
-
-    const tooltip = this.createTooltip();
-    const rect = container.getBoundingClientRect();
-
-    svg
-      .append('g')
-      .selectAll('circle')
-      .data<ChartDatum>(this.chartData)
-      .join('circle')
-      .attr('cx', (item: ChartDatum) => x(item.rank))
-      .attr('cy', (item: ChartDatum) => y(item.total))
-      .attr('r', 4)
-      .attr('fill', 'currentColor')
-      .attr('fill-opacity', 0.85)
-      .style('cursor', 'pointer')
-      .on('mouseenter', (event: MouseEvent, item: ChartDatum) => {
-        const absoluteX = rect.left + event.offsetX + window.scrollX;
-        const absoluteY = rect.top + event.offsetY + window.scrollY;
-        const tooltipText = `<strong>${item.name}</strong><br/>Ranking: #${item.rank}<br/>Frequência: ${d3.format(',d')(item.total)}`;
-        this.showTooltip(tooltip, absoluteX, absoluteY, tooltipText);
-      })
-      .on('mouseleave', () => {
-        this.hideTooltip(tooltip);
-      });
   }
 
   private renderDonutChart(container: HTMLDivElement): void {

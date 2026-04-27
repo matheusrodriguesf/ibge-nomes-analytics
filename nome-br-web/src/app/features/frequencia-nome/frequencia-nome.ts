@@ -95,6 +95,10 @@ export class FrequenciaNomeComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
+    this.destroyRef.onDestroy(() => {
+      d3.select('body').selectAll('.chart-tooltip').remove();
+    });
+
     this.searchForm.controls.estadoId.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((estadoId) => {
@@ -274,10 +278,13 @@ export class FrequenciaNomeComponent {
   }
 
   private createTooltip(): d3.Selection<HTMLDivElement, unknown, HTMLElement, any> {
+    d3.select('body').selectAll('.chart-tooltip').remove();
+
     return d3
       .select('body')
       .append('div')
-      .style('position', 'absolute')
+      .attr('class', 'chart-tooltip')
+      .style('position', 'fixed')
       .style('background-color', '#000')
       .style('color', '#fff')
       .style('padding', '8px 12px')
@@ -370,7 +377,6 @@ export class FrequenciaNomeComponent {
       .attr('d', lineGenerator);
 
     const tooltip = this.createTooltip();
-    const rect = container.getBoundingClientRect();
 
     const annotationGroup = svg.append('g').attr('class', 'annotation');
     let pinnedPeriodo: string | null = null;
@@ -438,10 +444,8 @@ export class FrequenciaNomeComponent {
       .attr('fill-opacity', 0.8)
       .style('cursor', 'pointer')
       .on('mouseenter', (event: MouseEvent, item: FrequenciaNome) => {
-        const absoluteX = rect.left + event.offsetX + window.scrollX;
-        const absoluteY = rect.top + event.offsetY + window.scrollY;
         const tooltipText = `<strong>Período:</strong> ${this.formatPeriodo(item.periodo)}<br/><strong>Frequência:</strong> ${this.numberFormatter.format(item.frequencia)}`;
-        this.showTooltip(tooltip, absoluteX, absoluteY, tooltipText);
+        this.showTooltip(tooltip, event.clientX, event.clientY, tooltipText);
       })
       .on('mouseleave', () => {
         this.hideTooltip(tooltip);

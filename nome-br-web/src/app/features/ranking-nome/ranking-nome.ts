@@ -92,6 +92,10 @@ export class RankingNomeComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
+    this.destroyRef.onDestroy(() => {
+      d3.select('body').selectAll('.chart-tooltip').remove();
+    });
+
     this.searchForm.controls.estadoId.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((estadoId) => {
@@ -233,10 +237,13 @@ export class RankingNomeComponent {
   }
 
   private createTooltip(): d3.Selection<HTMLDivElement, unknown, HTMLElement, any> {
+    d3.select('body').selectAll('.chart-tooltip').remove();
+
     return d3
       .select('body')
       .append('div')
-      .style('position', 'absolute')
+      .attr('class', 'chart-tooltip')
+      .style('position', 'fixed')
       .style('background-color', '#000')
       .style('color', '#fff')
       .style('padding', '8px 12px')
@@ -308,7 +315,6 @@ export class RankingNomeComponent {
       .call(d3.axisLeft(y).ticks(6).tickFormat(d3.format('.2s')));
 
     const tooltip = this.createTooltip();
-    const rect = container.getBoundingClientRect();
 
     svg
       .append('g')
@@ -323,10 +329,8 @@ export class RankingNomeComponent {
       .attr('fill-opacity', 0.8)
       .style('cursor', 'pointer')
       .on('mouseenter', (event: MouseEvent, item: ChartDatum) => {
-        const absoluteX = rect.left + event.offsetX + window.scrollX;
-        const absoluteY = rect.top + event.offsetY + window.scrollY;
         const tooltipText = `<strong>${item.name}</strong><br/>Ranking: #${item.rank}<br/>Frequência: ${d3.format(',d')(item.total)}`;
-        this.showTooltip(tooltip, absoluteX, absoluteY, tooltipText);
+        this.showTooltip(tooltip, event.clientX, event.clientY, tooltipText);
       })
       .on('mouseleave', () => {
         this.hideTooltip(tooltip);
@@ -370,7 +374,6 @@ export class RankingNomeComponent {
     const chartGroup = svg.append('g').attr('transform', `translate(${width / 2}, ${height / 2})`);
 
     const tooltip = this.createTooltip();
-    const rect = container.getBoundingClientRect();
 
     chartGroup
       .selectAll('path')
@@ -384,10 +387,8 @@ export class RankingNomeComponent {
       .attr('stroke-opacity', 0.5)
       .style('cursor', 'pointer')
       .on('mouseenter', (event: MouseEvent, datum: d3.PieArcDatum<ChartDatum>) => {
-        const absoluteX = rect.left + event.offsetX + window.scrollX;
-        const absoluteY = rect.top + event.offsetY + window.scrollY;
         const tooltipText = `<strong>${datum.data.name}</strong><br/>Ranking: #${datum.data.rank}<br/>Frequência: ${d3.format(',d')(datum.data.total)}`;
-        this.showTooltip(tooltip, absoluteX, absoluteY, tooltipText);
+        this.showTooltip(tooltip, event.clientX, event.clientY, tooltipText);
       })
       .on('mouseleave', () => {
         this.hideTooltip(tooltip);

@@ -1,19 +1,66 @@
-<main class="frequencia-demo">
-  <h1>Frequência temporal do nome: {{ nomeAtual }}</h1>
-  <p>Visualizações da evolução do nome ao longo dos períodos.</p>
+<div class="frequencia-page">
+  <header class="page-header">
+    <div class="page-header__content">
+      <p class="page-eyebrow">Análise por nome</p>
+      <h1>Frequência temporal de nomes</h1>
+      <p class="page-description">Pesquise um nome para visualizar sua evolução ao longo dos períodos históricos.</p>
+    </div>
 
-  <section class="chart-card">
-    <h2>Linha - Evolução temporal</h2>
-    <div #timelineChartContainer class="chart-container"></div>
-  </section>
+    <form (ngSubmit)="onSearch()">
+      <mat-form-field class="search-field">
+        <mat-label>Digite o nome que deseja consultar</mat-label>
+        <input matInput placeholder="Ex. João" name="nome" [(ngModel)]="nomeAtual" />
+        <button type="submit" mat-icon-button matSuffix aria-label="Pesquisar">
+          <mat-icon>search</mat-icon>
+        </button>
+      </mat-form-field>
+    </form>
 
-  <section class="chart-card">
-    <h2>Área - Frequência acumulada</h2>
-    <div #areaChartContainer class="chart-container"></div>
-  </section>
+    @if (tableData.length) {
+    <div class="summary-grid">
+      <article class="summary-card">
+        <span class="summary-card__label">Nome pesquisado</span>
+        <strong class="summary-card__value">{{ nomeAtual }}</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-card__label">Período de pico</span>
+        <strong class="summary-card__value">{{ periodoPico }}</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-card__label">Frequência máxima</span>
+        <strong class="summary-card__value">{{ frequenciaMaxima }}</strong>
+      </article>
+    </div>
+    }
+  </header>
 
-  <section class="chart-card">
-    <h2>Barras - Por período</h2>
-    <div #barTimeChartContainer class="chart-container"></div>
+  @if (tableData.length) {
+  <section class="content-card">
+    <h2>Dados por período</h2>
+    <app-paginated-table
+      [data]="pagedTableData"
+      [columns]="columns"
+      [length]="tableData.length"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      [pageSizeOptions]="pageSizeOptions"
+      emptyMessage="Nenhum dado disponível para o nome informado."
+      (pageChange)="onPageChange($event)"
+    ></app-paginated-table>
   </section>
-</main>
+  }
+
+  @if (tableData.length) {
+  <section class="content-card">
+    <div class="charts-grid">
+      <article class="chart-card chart-card--wide">
+        <div class="chart-card__header">
+          <h3>Gráfico de Evolução Temporal</h3>
+          <p>Evolução do nome <strong>{{ nomeAtual }}</strong> ao longo dos períodos históricos.</p>
+        </div>
+        <div #timelineChartContainer class="chart-container"></div>
+      </article>
+    </div>
+  </section>
+  }
+</div>

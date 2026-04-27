@@ -1,32 +1,141 @@
-.frequencia-demo {
-  max-width: 760px;
-  margin: 2rem auto;
-  padding: 0 1rem;
-  display: grid;
-  gap: 1rem;
+.frequencia-page {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 1.5rem 1rem 2.5rem;
+	display: grid;
+	gap: 1.5rem;
+}
+
+.page-header {
+	display: grid;
+	gap: 1rem;
+}
+
+.page-header__content {
+	display: grid;
+	gap: 0.5rem;
+}
+
+.page-eyebrow {
+	margin: 0;
+	font-size: 0.8rem;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	opacity: 0.72;
+}
+
+h1,
+h2,
+h3,
+p {
+	margin: 0;
 }
 
 h1 {
-  margin: 0 0 0.5rem;
+	font-size: clamp(1.8rem, 2.4vw, 2.6rem);
+	line-height: 1.1;
 }
 
 h2 {
-  margin: 0;
-  font-size: 1rem;
+	font-size: 1.25rem;
 }
 
-p {
-  margin: 0 0 1rem;
+h3 {
+	font-size: 1rem;
+}
+
+.page-description,
+.chart-card__header p {
+	color: color-mix(in srgb, currentColor 72%, transparent);
+	line-height: 1.5;
+}
+
+.search-field {
+	width: 100%;
+}
+
+.summary-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 0.75rem;
+}
+
+.summary-card,
+.content-card,
+.chart-card {
+	border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+	border-radius: 1rem;
+	background: color-mix(in srgb, canvas 94%, currentColor 6%);
+	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+}
+
+.summary-card {
+	padding: 1rem;
+	display: grid;
+	gap: 0.35rem;
+}
+
+.summary-card__label {
+	font-size: 0.85rem;
+	opacity: 0.75;
+}
+
+.summary-card__value {
+	font-size: 1.3rem;
+	font-weight: 700;
+}
+
+.content-card {
+	padding: 1.25rem;
+	display: grid;
+	gap: 1rem;
+}
+
+.charts-grid {
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	gap: 1rem;
 }
 
 .chart-card {
-  display: grid;
-  gap: 0.5rem;
+	grid-column: span 12;
+	padding: 1rem;
+	display: grid;
+	gap: 0.75rem;
+}
+
+.chart-card--wide {
+	grid-column: span 12;
+}
+
+.chart-card__header {
+	display: grid;
+	gap: 0.25rem;
 }
 
 .chart-container {
-  border: 1px solid;
-  border-radius: 0.5rem;
-  padding: 0.5rem;
-  overflow: hidden;
+	border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+	border-radius: 0.75rem;
+	padding: 1rem;
+	overflow: hidden;
+	background: color-mix(in srgb, canvas 97%, currentColor 3%);
+	min-height: 420px;
+}
+
+@media (max-width: 640px) {
+	.frequencia-page {
+		padding-inline: 0.75rem;
+	}
+
+	.content-card,
+	.summary-card,
+	.chart-card {
+		padding: 1rem;
+	}
+
+	.chart-container {
+		min-height: 260px;
+		padding: 0.5rem;
+	}
 }

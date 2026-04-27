@@ -1,59 +1,129 @@
-import { AfterViewInit, Component, ElementRef, inject, ViewChild } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, inject, viewChild } from '@angular/core';
 import * as d3 from 'd3';
 import { CensoNomeService } from '../../services/censo.nome.service';
 import { FrequenciaNome } from '../../models/resultado-nome-frequencia';
+import { FormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { PageEvent } from '@angular/material/paginator';
+import {
+  PaginatedTable,
+  PaginatedTableColumn,
+  TableValue,
+} from '../../shared/components/paginated-table/paginated-table';
 
 @Component({
   selector: 'app-frequencia-nome',
   standalone: true,
   templateUrl: './frequencia-nome.html',
   styleUrl: './frequencia-nome.scss',
+  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule, PaginatedTable],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class FrequenciaNomeComponent implements AfterViewInit {
-  @ViewChild('timelineChartContainer', { static: true })
-  private timelineContainer?: ElementRef<HTMLDivElement>;
+export class FrequenciaNomeComponent {
+  private readonly timelineContainer = viewChild<ElementRef<HTMLDivElement>>('timelineChartContainer');
 
-  @ViewChild('areaChartContainer', { static: true })
-  private areaContainer?: ElementRef<HTMLDivElement>;
-
-  @ViewChild('barTimeChartContainer', { static: true })
-  private barTimeContainer?: ElementRef<HTMLDivElement>;
+  private readonly numberFormatter = new Intl.NumberFormat('pt-BR');
 
   private frequenciaData: FrequenciaNome[] = [];
-  readonly nomeAtual = 'JOAO';
-  private readonly censoNomeService = inject(CensoNomeService);
+  nomeAtual = '';
 
-  ngAfterViewInit(): void {
-    void this.loadFrequenciaNome();
+  readonly columns: PaginatedTableColumn[] = [
+    {
+      key: 'periodo',
+      header: 'Período',
+      formatter: (row) => this.formatPeriodo(String(row['periodo'])),
+    },
+    {
+      key: 'frequencia',
+      header: 'Frequência',
+      align: 'end',
+      formatter: (row) => this.numberFormatter.format(row['frequencia'] as number),
+    },
+  ];
+  readonly pageSizeOptions: number[] = [5, 10, 25];
+
+  tableData: Record<string, TableValue>[] = [];
+  pagedTableData: Record<string, TableValue>[] = [];
+  pageSize = 10;
+  pageIndex = 0;
+
+  private readonly censoNomeService = inject(CensoNomeService);
+  private readonly changeDetectorRef = inject(ChangeDetectorRef);
+
+  constructor() {
+    afterNextRender(() => {
+      if (this.nomeAtual) {
+        void this.loadFrequenciaNome();
+      }
+    });
+  }
+
+  async onSearch(): Promise<void> {
+    const nomeNormalizado = this.nomeAtual.trim().toUpperCase();
+
+    if (!nomeNormalizado) {
+      return;
+    }
+
+    this.nomeAtual = nomeNormalizado;
+    await this.loadFrequenciaNome();
+  }
+
+  get periodoPico(): string {
+    if (!this.frequenciaData.length) return '—';
+    const pico = this.frequenciaData.reduce((max, item) =>
+      item.frequencia > max.frequencia ? item : max
+    );
+    const parts = pico.periodo.split(',');
+    return parts.length > 1 ? `${parts[0]}–${parts[1]}` : parts[0];
+  }
+
+  get frequenciaMaxima(): string {
+    if (!this.frequenciaData.length) return '—';
+    const max = Math.max(...this.frequenciaData.map(i => i.frequencia));
+    return this.numberFormatter.format(max);
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.updatePagedData();
+    this.changeDetectorRef.markForCheck();
+  }
+
+  private updatePagedData(): void {
+    const start = this.pageIndex * this.pageSize;
+    this.pagedTableData = this.tableData.slice(start, start + this.pageSize);
   }
 
   private async loadFrequenciaNome(): Promise<void> {
     const response = await this.censoNomeService.getFrequenciaNome(this.nomeAtual);
     this.frequenciaData = response[0]?.resultados ?? [];
+
+    this.tableData = this.frequenciaData.map((item) => ({
+      periodo: item.periodo,
+      frequencia: item.frequencia,
+    }));
+    this.pageIndex = 0;
+    this.updatePagedData();
+
+    this.changeDetectorRef.detectChanges();
     this.renderCharts();
+    this.changeDetectorRef.markForCheck();
   }
 
   private renderCharts(): void {
-    const timelineContainer = this.timelineContainer?.nativeElement;
-    const areaContainer = this.areaContainer?.nativeElement;
-    const barTimeContainer = this.barTimeContainer?.nativeElement;
+    const timelineContainer = this.timelineContainer()?.nativeElement;
 
-    if (
-      !timelineContainer ||
-      !areaContainer ||
-      !barTimeContainer ||
-      this.frequenciaData.length === 0
-    ) {
+    if (!timelineContainer || this.frequenciaData.length === 0) {
       return;
     }
 
     d3.select(timelineContainer).selectAll('*').remove();
-    d3.select(areaContainer).selectAll('*').remove();
-    d3.select(barTimeContainer).selectAll('*').remove();
-
     this.renderTimelineChart(timelineContainer);
-    this.renderAreaChart(areaContainer);
-    this.renderBarTimeChart(barTimeContainer);
   }
 
   private createTooltip(): d3.Selection<HTMLDivElement, unknown, HTMLElement, any> {
@@ -93,10 +163,15 @@ export class FrequenciaNomeComponent implements AfterViewInit {
     tooltip.style('opacity', '0');
   }
 
+  private formatPeriodo(periodo: string): string {
+    const parts = periodo.split(',');
+    return parts.length > 1 ? `${parts[0]}–${parts[1]}` : parts[0];
+  }
+
   private renderTimelineChart(container: HTMLDivElement): void {
-    const width = 760;
-    const height = 340;
-    const margin = { top: 20, right: 20, bottom: 40, left: 70 };
+    const width = 1020;
+    const height = 440;
+    const margin = { top: 24, right: 32, bottom: 64, left: 80 };
 
     const svg = d3
       .select(container)
@@ -125,16 +200,19 @@ export class FrequenciaNomeComponent implements AfterViewInit {
     svg
       .append('g')
       .attr('transform', `translate(0, ${height - margin.bottom})`)
-      .call(d3.axisBottom(x))
+      .call(d3.axisBottom(x).tickFormat((d) => this.formatPeriodo(d)))
       .selectAll('text')
-      .attr('transform', 'rotate(-45)')
+      .attr('transform', 'rotate(-30)')
       .style('text-anchor', 'end')
-      .style('font-size', '11px');
+      .style('font-size', '14px')
+      .style('font-weight', '500');
 
     svg
       .append('g')
       .attr('transform', `translate(${margin.left}, 0)`)
-      .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format('.2s')));
+      .call(d3.axisLeft(y).ticks(6).tickFormat((d) => this.numberFormatter.format(d as number)))
+      .selectAll('text')
+      .style('font-size', '14px');
 
     svg
       .append('path')
@@ -146,6 +224,60 @@ export class FrequenciaNomeComponent implements AfterViewInit {
 
     const tooltip = this.createTooltip();
     const rect = container.getBoundingClientRect();
+
+    const annotationGroup = svg.append('g').attr('class', 'annotation');
+    let pinnedPeriodo: string | null = null;
+
+    const clearAnnotation = (): void => {
+      annotationGroup.selectAll('*').remove();
+      pinnedPeriodo = null;
+    };
+
+    const pinAnnotation = (cx: number, cy: number, item: FrequenciaNome): void => {
+      annotationGroup.selectAll('*').remove();
+      const label = this.formatPeriodo(item.periodo);
+      const value = this.numberFormatter.format(item.frequencia);
+      const text = `${label}: ${value}`;
+
+      const padding = { x: 10, y: 6 };
+      const offsetX = cx + 12;
+      const offsetY = cy - 18;
+
+      annotationGroup
+        .append('line')
+        .attr('x1', cx)
+        .attr('y1', cy)
+        .attr('x2', offsetX + 4)
+        .attr('y2', offsetY + padding.y)
+        .attr('stroke', 'currentColor')
+        .attr('stroke-width', 1.2)
+        .attr('stroke-dasharray', '3,2')
+        .attr('opacity', 0.5);
+
+      const textEl = annotationGroup
+        .append('text')
+        .attr('x', offsetX + padding.x)
+        .attr('y', offsetY + padding.y + 1)
+        .attr('dominant-baseline', 'middle')
+        .style('font-size', '13px')
+        .style('font-weight', '600')
+        .text(text);
+
+      const bbox = (textEl.node() as SVGTextElement).getBBox();
+
+      annotationGroup
+        .insert('rect', 'text')
+        .attr('x', bbox.x - padding.x)
+        .attr('y', bbox.y - padding.y)
+        .attr('width', bbox.width + padding.x * 2)
+        .attr('height', bbox.height + padding.y * 2)
+        .attr('rx', 6)
+        .attr('fill', 'currentColor')
+        .attr('opacity', 0.12)
+        .attr('stroke', 'currentColor')
+        .attr('stroke-width', 1)
+        .attr('stroke-opacity', 0.3);
+    };
 
     svg
       .append('g')
@@ -161,182 +293,41 @@ export class FrequenciaNomeComponent implements AfterViewInit {
       .on('mouseenter', (event: MouseEvent, item: FrequenciaNome) => {
         const absoluteX = rect.left + event.offsetX + window.scrollX;
         const absoluteY = rect.top + event.offsetY + window.scrollY;
-        const labels = item.periodo.split(',');
-        const periodLabel = labels.length > 1 ? `${labels[0]}-${labels[1]}` : labels[0];
-        const tooltipText = `<strong>Período:</strong> ${periodLabel}<br/><strong>Frequência:</strong> ${d3.format(',d')(item.frequencia)}`;
+        const tooltipText = `<strong>Período:</strong> ${this.formatPeriodo(item.periodo)}<br/><strong>Frequência:</strong> ${this.numberFormatter.format(item.frequencia)}`;
         this.showTooltip(tooltip, absoluteX, absoluteY, tooltipText);
       })
       .on('mouseleave', () => {
         this.hideTooltip(tooltip);
+      })
+      .on('click', (_event: MouseEvent, item: FrequenciaNome) => {
+        this.hideTooltip(tooltip);
+        if (pinnedPeriodo === item.periodo) {
+          clearAnnotation();
+        } else {
+          pinnedPeriodo = item.periodo;
+          pinAnnotation(x(item.periodo) ?? 0, y(item.frequencia), item);
+        }
       });
 
     svg
       .append('text')
       .attr('x', width / 2)
-      .attr('y', height - 6)
+      .attr('y', height - 4)
       .attr('text-anchor', 'middle')
-      .style('font-size', '12px')
-      .text('Evolução temporal');
-  }
-
-  private renderAreaChart(container: HTMLDivElement): void {
-    const width = 760;
-    const height = 340;
-    const margin = { top: 20, right: 20, bottom: 40, left: 70 };
-
-    const svg = d3
-      .select(container)
-      .append('svg')
-      .attr('viewBox', `0 0 ${width} ${height}`)
-      .style('width', '100%')
-      .style('height', 'auto')
-      .style('display', 'block');
-
-    const x = d3
-      .scalePoint<string>()
-      .domain(this.frequenciaData.map((item: FrequenciaNome) => item.periodo))
-      .range([margin.left, width - margin.right]);
-
-    const y = d3
-      .scaleLinear()
-      .domain([0, d3.max(this.frequenciaData, (item: FrequenciaNome) => item.frequencia) ?? 0])
-      .nice()
-      .range([height - margin.bottom, margin.top]);
-
-    const areaGenerator = d3
-      .area<FrequenciaNome>()
-      .x((item: FrequenciaNome) => x(item.periodo) ?? 0)
-      .y0(height - margin.bottom)
-      .y1((item: FrequenciaNome) => y(item.frequencia));
-
-    svg
-      .append('g')
-      .attr('transform', `translate(0, ${height - margin.bottom})`)
-      .call(d3.axisBottom(x))
-      .selectAll('text')
-      .attr('transform', 'rotate(-45)')
-      .style('text-anchor', 'end')
-      .style('font-size', '11px');
-
-    svg
-      .append('g')
-      .attr('transform', `translate(${margin.left}, 0)`)
-      .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format('.2s')));
-
-    svg
-      .append('path')
-      .datum(this.frequenciaData)
-      .attr('fill', 'currentColor')
-      .attr('fill-opacity', 0.3)
-      .attr('d', areaGenerator);
-
-    const tooltip = this.createTooltip();
-    const rect = container.getBoundingClientRect();
-
-    svg
-      .append('g')
-      .selectAll('rect')
-      .data<FrequenciaNome>(this.frequenciaData)
-      .join('rect')
-      .attr('x', (item: FrequenciaNome) => (x(item.periodo) ?? 0) - 8)
-      .attr('y', margin.top)
-      .attr('width', 16)
-      .attr('height', height - margin.bottom - margin.top)
-      .attr('fill', 'transparent')
-      .style('cursor', 'pointer')
-      .on('mouseenter', (event: MouseEvent, item: FrequenciaNome) => {
-        const absoluteX = rect.left + event.offsetX + window.scrollX;
-        const absoluteY = rect.top + event.offsetY + window.scrollY;
-        const labels = item.periodo.split(',');
-        const periodLabel = labels.length > 1 ? `${labels[0]}-${labels[1]}` : labels[0];
-        const tooltipText = `<strong>Período:</strong> ${periodLabel}<br/><strong>Frequência:</strong> ${d3.format(',d')(item.frequencia)}`;
-        this.showTooltip(tooltip, absoluteX, absoluteY, tooltipText);
-      })
-      .on('mouseleave', () => {
-        this.hideTooltip(tooltip);
-      });
+      .style('font-size', '13px')
+      .style('font-weight', '600')
+      .style('opacity', '0.7')
+      .text('Período');
 
     svg
       .append('text')
-      .attr('x', width / 2)
-      .attr('y', height - 6)
+      .attr('transform', 'rotate(-90)')
+      .attr('x', -(height / 2))
+      .attr('y', 18)
       .attr('text-anchor', 'middle')
-      .style('font-size', '12px')
-      .text('Área - Frequência acumulada');
-  }
-
-  private renderBarTimeChart(container: HTMLDivElement): void {
-    const width = 760;
-    const height = 340;
-    const margin = { top: 20, right: 20, bottom: 40, left: 70 };
-
-    const svg = d3
-      .select(container)
-      .append('svg')
-      .attr('viewBox', `0 0 ${width} ${height}`)
-      .style('width', '100%')
-      .style('height', 'auto')
-      .style('display', 'block');
-
-    const x = d3
-      .scaleBand<string>()
-      .domain(this.frequenciaData.map((item: FrequenciaNome) => item.periodo))
-      .range([margin.left, width - margin.right])
-      .padding(0.3);
-
-    const y = d3
-      .scaleLinear()
-      .domain([0, d3.max(this.frequenciaData, (item: FrequenciaNome) => item.frequencia) ?? 0])
-      .nice()
-      .range([height - margin.bottom, margin.top]);
-
-    svg
-      .append('g')
-      .attr('transform', `translate(0, ${height - margin.bottom})`)
-      .call(d3.axisBottom(x))
-      .selectAll('text')
-      .attr('transform', 'rotate(-45)')
-      .style('text-anchor', 'end')
-      .style('font-size', '11px');
-
-    svg
-      .append('g')
-      .attr('transform', `translate(${margin.left}, 0)`)
-      .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format('.2s')));
-
-    const tooltip = this.createTooltip();
-    const rect = container.getBoundingClientRect();
-
-    svg
-      .append('g')
-      .selectAll('rect')
-      .data<FrequenciaNome>(this.frequenciaData)
-      .join('rect')
-      .attr('x', (item: FrequenciaNome) => x(item.periodo) ?? 0)
-      .attr('y', (item: FrequenciaNome) => y(item.frequencia))
-      .attr('width', x.bandwidth())
-      .attr('height', (item: FrequenciaNome) => y(0) - y(item.frequencia))
-      .attr('fill', 'currentColor')
-      .attr('fill-opacity', 0.75)
-      .style('cursor', 'pointer')
-      .on('mouseenter', (event: MouseEvent, item: FrequenciaNome) => {
-        const absoluteX = rect.left + event.offsetX + window.scrollX;
-        const absoluteY = rect.top + event.offsetY + window.scrollY;
-        const labels = item.periodo.split(',');
-        const periodLabel = labels.length > 1 ? `${labels[0]}-${labels[1]}` : labels[0];
-        const tooltipText = `<strong>Período:</strong> ${periodLabel}<br/><strong>Frequência:</strong> ${d3.format(',d')(item.frequencia)}`;
-        this.showTooltip(tooltip, absoluteX, absoluteY, tooltipText);
-      })
-      .on('mouseleave', () => {
-        this.hideTooltip(tooltip);
-      });
-
-    svg
-      .append('text')
-      .attr('x', width / 2)
-      .attr('y', height - 6)
-      .attr('text-anchor', 'middle')
-      .style('font-size', '12px')
-      .text('Barras - Por período');
+      .style('font-size', '13px')
+      .style('font-weight', '600')
+      .style('opacity', '0.7')
+      .text('Frequência');
   }
 }

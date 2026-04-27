@@ -6,6 +6,7 @@ export interface FrequenciaNome {
 
 export interface ResultadoNomeFrequencia {
     nome: string;
+    sexo?: string | null;
     localidade: string;
     resultados: FrequenciaNome[];
 }

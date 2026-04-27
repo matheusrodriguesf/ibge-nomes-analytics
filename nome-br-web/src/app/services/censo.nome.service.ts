@@ -15,11 +15,25 @@ export class CensoNomeService {
     return firstValueFrom(this.http.get<ResultadoNomeRanking[]>(`${this.baseUrl}/ranking-nomes`));
   }
 
-  getFrequenciaNome(nome: string, localidade?: number | null): Promise<ResultadoNomeFrequencia[]> {
-    const params = localidade ? new HttpParams().set('localidade', localidade) : undefined;
+  getFrequenciaNome(
+    nome: string,
+    localidade?: number | null,
+    sexo?: 'M' | 'F' | null,
+  ): Promise<ResultadoNomeFrequencia[]> {
+    let params = new HttpParams();
+
+    if (localidade) {
+      params = params.set('localidade', localidade);
+    }
+
+    if (sexo) {
+      params = params.set('sexo', sexo);
+    }
 
     return firstValueFrom(
-      this.http.get<ResultadoNomeFrequencia[]>(`${this.baseUrl}/frequencia-nomes/${nome}`, { params })
+      this.http.get<ResultadoNomeFrequencia[]>(`${this.baseUrl}/frequencia-nomes/${nome}`, {
+        params: params.keys().length ? params : undefined,
+      })
     );
   }
 

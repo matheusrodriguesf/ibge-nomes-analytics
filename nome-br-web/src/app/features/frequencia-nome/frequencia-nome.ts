@@ -28,6 +28,8 @@ import { LocalidadeService } from '../../services/localidade.service';
 import { SelectEstadoItem } from '../../models/select-estado-item';
 import { SelectDistritoItem } from '../../models/select-distrito-item';
 
+type SexoOption = 'M' | 'F';
+
 @Component({
   selector: 'app-frequencia-nome',
   templateUrl: './frequencia-nome.html',
@@ -53,6 +55,7 @@ export class FrequenciaNomeComponent {
 
   readonly searchForm = new FormGroup({
     nome: new FormControl('', { nonNullable: true }),
+    sexo: new FormControl<SexoOption | null>(null),
     estadoId: new FormControl<number | null>(null),
     municipioId: new FormControl<number | null>({ value: null, disabled: true }),
   });
@@ -79,6 +82,11 @@ export class FrequenciaNomeComponent {
   nomeAtual = '';
   estados: SelectEstadoItem[] = [];
   municipios: SelectDistritoItem[] = [];
+  sexoAtual: SexoOption | null = null;
+  readonly sexoOptions: Array<{ value: SexoOption; label: string }> = [
+    { value: 'F', label: 'Feminino' },
+    { value: 'M', label: 'Masculino' },
+  ];
 
   private readonly censoNomeService = inject(CensoNomeService);
   private readonly localidadeService = inject(LocalidadeService);
@@ -109,8 +117,13 @@ export class FrequenciaNomeComponent {
     }
 
     this.nomeAtual = nomeNormalizado;
+    this.sexoAtual = this.searchForm.controls.sexo.value;
     this.searchForm.controls.nome.setValue(nomeNormalizado, { emitEvent: false });
     await this.loadFrequenciaNome();
+  }
+
+  get sexoAtualLabel(): string {
+    return this.sexoOptions.find((option) => option.value === this.sexoAtual)?.label ?? 'Todos';
   }
 
   get localidadeAtual(): string {
@@ -190,7 +203,11 @@ export class FrequenciaNomeComponent {
 
   private async loadFrequenciaNome(): Promise<void> {
     const localidadeSelecionada = this.searchForm.controls.municipioId.value ?? this.searchForm.controls.estadoId.value;
-    const response = await this.censoNomeService.getFrequenciaNome(this.nomeAtual, localidadeSelecionada);
+    const response = await this.censoNomeService.getFrequenciaNome(
+      this.nomeAtual,
+      localidadeSelecionada,
+      this.searchForm.controls.sexo.value,
+    );
     this.frequenciaData = response[0]?.resultados ?? [];
 
     this.tableData = this.frequenciaData.map((item) => ({

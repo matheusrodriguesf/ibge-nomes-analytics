@@ -17,6 +17,16 @@
         </mat-form-field>
 
         <mat-form-field class="filter-field">
+          <mat-label>Sexo</mat-label>
+          <mat-select formControlName="sexo">
+            <mat-option [value]="null">Todos</mat-option>
+            @for (sexoOption of sexoOptions; track sexoOption.value) {
+            <mat-option [value]="sexoOption.value">{{ sexoOption.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="filter-field">
           <mat-label>Estado</mat-label>
           <mat-select formControlName="estadoId">
             <mat-option [value]="null">Todos os estados</mat-option>
@@ -58,6 +68,10 @@
       <article class="summary-card">
         <span class="summary-card__label">Localidade</span>
         <strong class="summary-card__value">{{ localidadeAtual }}</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-card__label">Sexo</span>
+        <strong class="summary-card__value">{{ sexoAtualLabel }}</strong>
       </article>
     </div>
     }

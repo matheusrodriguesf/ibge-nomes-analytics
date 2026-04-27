@@ -80,6 +80,12 @@ h3 {
 	flex-wrap: wrap;
 }
 
+.btn-spinner {
+	display: inline-block;
+	vertical-align: middle;
+	margin-right: 0.35rem;
+}
+
 .summary-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

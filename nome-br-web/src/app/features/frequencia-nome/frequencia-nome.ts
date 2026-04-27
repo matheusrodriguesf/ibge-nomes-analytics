@@ -17,6 +17,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PageEvent } from '@angular/material/paginator';
 import {
   PaginatedTable,
@@ -39,6 +40,7 @@ type SexoOption = 'M' | 'F';
     MatInputModule,
     MatButtonModule,
     MatSelectModule,
+    MatProgressSpinnerModule,
     PaginatedTable,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -77,6 +79,7 @@ export class FrequenciaNomeComponent {
   pagedTableData: Record<string, TableValue>[] = [];
   pageSize = 10;
   pageIndex = 0;
+  isLoading = false;
   nomeAtual = '';
   estados: SelectEstadoItem[] = [];
   municipios: SelectDistritoItem[] = [];
@@ -118,7 +121,19 @@ export class FrequenciaNomeComponent {
     this.nomeAtual = nomeNormalizado;
     this.sexoAtual = this.searchForm.controls.sexo.value;
     this.searchForm.controls.nome.setValue(nomeNormalizado, { emitEvent: false });
-    await this.loadFrequenciaNome();
+    this.isLoading = true;
+    this.searchForm.disable({ emitEvent: false });
+    this.changeDetectorRef.markForCheck();
+    try {
+      await this.loadFrequenciaNome();
+    } finally {
+      this.isLoading = false;
+      this.searchForm.enable({ emitEvent: false });
+      if (!this.searchForm.controls.estadoId.value) {
+        this.searchForm.controls.municipioId.disable({ emitEvent: false });
+      }
+      this.changeDetectorRef.markForCheck();
+    }
   }
 
   onClear(): void {

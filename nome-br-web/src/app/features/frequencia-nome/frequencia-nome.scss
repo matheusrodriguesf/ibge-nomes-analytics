@@ -51,7 +51,24 @@ h3 {
 	line-height: 1.5;
 }
 
+.filters-form {
+	display: grid;
+	gap: 0.75rem;
+}
+
+.filters-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 0.75rem;
+	align-items: start;
+}
+
 .search-field {
+	width: 100%;
+	grid-column: span 2;
+}
+
+.filter-field {
 	width: 100%;
 }
 
@@ -126,6 +143,10 @@ h3 {
 @media (max-width: 640px) {
 	.frequencia-page {
 		padding-inline: 0.75rem;
+	}
+
+	.search-field {
+		grid-column: span 1;
 	}
 
 	.content-card,

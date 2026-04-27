@@ -1,25 +1,46 @@
-import { afterNextRender, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, inject, viewChild } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import * as d3 from 'd3';
 import { CensoNomeService } from '../../services/censo.nome.service';
 import { FrequenciaNome } from '../../models/resultado-nome-frequencia';
-import { FormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatSelectModule } from '@angular/material/select';
 import { PageEvent } from '@angular/material/paginator';
 import {
   PaginatedTable,
   PaginatedTableColumn,
   TableValue,
 } from '../../shared/components/paginated-table/paginated-table';
+import { LocalidadeService } from '../../services/localidade.service';
+import { SelectEstadoItem } from '../../models/select-estado-item';
+import { SelectDistritoItem } from '../../models/select-distrito-item';
 
 @Component({
   selector: 'app-frequencia-nome',
-  standalone: true,
   templateUrl: './frequencia-nome.html',
   styleUrl: './frequencia-nome.scss',
-  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule, PaginatedTable],
+  imports: [
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatIconModule,
+    MatButtonModule,
+    MatSelectModule,
+    PaginatedTable,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FrequenciaNomeComponent {
@@ -28,7 +49,13 @@ export class FrequenciaNomeComponent {
   private readonly numberFormatter = new Intl.NumberFormat('pt-BR');
 
   private frequenciaData: FrequenciaNome[] = [];
-  nomeAtual = '';
+  private municipiosRequestId = 0;
+
+  readonly searchForm = new FormGroup({
+    nome: new FormControl('', { nonNullable: true }),
+    estadoId: new FormControl<number | null>(null),
+    municipioId: new FormControl<number | null>({ value: null, disabled: true }),
+  });
 
   readonly columns: PaginatedTableColumn[] = [
     {
@@ -49,27 +76,57 @@ export class FrequenciaNomeComponent {
   pagedTableData: Record<string, TableValue>[] = [];
   pageSize = 10;
   pageIndex = 0;
+  nomeAtual = '';
+  estados: SelectEstadoItem[] = [];
+  municipios: SelectDistritoItem[] = [];
 
   private readonly censoNomeService = inject(CensoNomeService);
+  private readonly localidadeService = inject(LocalidadeService);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
+    this.searchForm.controls.estadoId.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((estadoId) => {
+        void this.onEstadoChange(estadoId);
+      });
+
+    void this.loadEstados();
+
     afterNextRender(() => {
-      if (this.nomeAtual) {
-        void this.loadFrequenciaNome();
+      if (this.searchForm.controls.nome.value) {
+        void this.onSearch();
       }
     });
   }
 
   async onSearch(): Promise<void> {
-    const nomeNormalizado = this.nomeAtual.trim().toUpperCase();
+    const nomeNormalizado = this.searchForm.controls.nome.value.trim().toUpperCase();
 
     if (!nomeNormalizado) {
       return;
     }
 
     this.nomeAtual = nomeNormalizado;
+    this.searchForm.controls.nome.setValue(nomeNormalizado, { emitEvent: false });
     await this.loadFrequenciaNome();
+  }
+
+  get localidadeAtual(): string {
+    const municipioSelecionado = this.municipios.find(
+      (municipio) => municipio.ibge === this.searchForm.controls.municipioId.value
+    );
+
+    if (municipioSelecionado) {
+      return municipioSelecionado.nome;
+    }
+
+    const estadoSelecionado = this.estados.find(
+      (estado) => estado.id === this.searchForm.controls.estadoId.value
+    );
+
+    return estadoSelecionado ? `${estadoSelecionado.nome} (${estadoSelecionado.sigla})` : 'Brasil';
   }
 
   get periodoPico(): string {
@@ -99,8 +156,41 @@ export class FrequenciaNomeComponent {
     this.pagedTableData = this.tableData.slice(start, start + this.pageSize);
   }
 
+  private async loadEstados(): Promise<void> {
+    const estados = await this.localidadeService.getAllEstados();
+    this.estados = [...estados].sort((first, second) => first.nome.localeCompare(second.nome, 'pt-BR'));
+    this.changeDetectorRef.markForCheck();
+  }
+
+  private async onEstadoChange(estadoId: number | null): Promise<void> {
+    this.municipiosRequestId += 1;
+    const requestId = this.municipiosRequestId;
+
+    this.municipios = [];
+    this.searchForm.controls.municipioId.reset(null, { emitEvent: false });
+
+    if (!estadoId) {
+      this.searchForm.controls.municipioId.disable({ emitEvent: false });
+      this.changeDetectorRef.markForCheck();
+      return;
+    }
+
+    this.searchForm.controls.municipioId.enable({ emitEvent: false });
+    this.changeDetectorRef.markForCheck();
+
+    const municipios = await this.localidadeService.getDistritosByEstado(estadoId);
+
+    if (requestId !== this.municipiosRequestId) {
+      return;
+    }
+
+    this.municipios = [...municipios].sort((first, second) => first.nome.localeCompare(second.nome, 'pt-BR'));
+    this.changeDetectorRef.markForCheck();
+  }
+
   private async loadFrequenciaNome(): Promise<void> {
-    const response = await this.censoNomeService.getFrequenciaNome(this.nomeAtual);
+    const localidadeSelecionada = this.searchForm.controls.municipioId.value ?? this.searchForm.controls.estadoId.value;
+    const response = await this.censoNomeService.getFrequenciaNome(this.nomeAtual, localidadeSelecionada);
     this.frequenciaData = response[0]?.resultados ?? [];
 
     this.tableData = this.frequenciaData.map((item) => ({

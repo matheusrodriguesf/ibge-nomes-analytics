@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { SelectDistritoItem } from '../models/select-distrito-item';
+import { SelectEstadoItem } from '../models/select-estado-item';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable({
@@ -11,8 +12,8 @@ export class LocalidadeService {
   private readonly http = inject(HttpClient);
 
 
-  getAllEstados(): Promise<SelectDistritoItem[]> {
-    return firstValueFrom(this.http.get<SelectDistritoItem[]>(`${this.baseUrl}`));
+  getAllEstados(): Promise<SelectEstadoItem[]> {
+    return firstValueFrom(this.http.get<SelectEstadoItem[]>(`${this.baseUrl}`));
   }
 
   getDistritosByEstado(estadoId: number): Promise<SelectDistritoItem[]> {

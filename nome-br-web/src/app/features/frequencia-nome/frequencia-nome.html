@@ -6,14 +6,39 @@
       <p class="page-description">Pesquise um nome para visualizar sua evolução ao longo dos períodos históricos.</p>
     </div>
 
-    <form (ngSubmit)="onSearch()">
-      <mat-form-field class="search-field">
-        <mat-label>Digite o nome que deseja consultar</mat-label>
-        <input matInput placeholder="Ex. João" name="nome" [(ngModel)]="nomeAtual" />
-        <button type="submit" mat-icon-button matSuffix aria-label="Pesquisar">
-          <mat-icon>search</mat-icon>
-        </button>
-      </mat-form-field>
+    <form class="filters-form" [formGroup]="searchForm" (ngSubmit)="onSearch()">
+      <div class="filters-grid">
+        <mat-form-field class="search-field">
+          <mat-label>Digite o nome que deseja consultar</mat-label>
+          <input matInput placeholder="Ex. João" formControlName="nome" />
+          <button type="submit" mat-icon-button matSuffix aria-label="Pesquisar">
+            <mat-icon>search</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <mat-form-field class="filter-field">
+          <mat-label>Estado</mat-label>
+          <mat-select formControlName="estadoId">
+            <mat-option [value]="null">Todos os estados</mat-option>
+            @for (estado of estados; track estado.id) {
+            <mat-option [value]="estado.id">{{ estado.nome }} ({{ estado.sigla }})</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="filter-field">
+          <mat-label>Município</mat-label>
+          <mat-select formControlName="municipioId">
+            <mat-option [value]="null">Todos os municípios do estado</mat-option>
+            @for (municipio of municipios; track municipio.ibge) {
+            <mat-option [value]="municipio.ibge">{{ municipio.nome }}</mat-option>
+            }
+          </mat-select>
+          @if (!searchForm.controls.estadoId.value) {
+          <mat-hint>Selecione um estado para carregar os municípios.</mat-hint>
+          }
+        </mat-form-field>
+      </div>
     </form>
 
     @if (tableData.length) {
@@ -29,6 +54,10 @@
       <article class="summary-card">
         <span class="summary-card__label">Frequência máxima</span>
         <strong class="summary-card__value">{{ frequenciaMaxima }}</strong>
+      </article>
+      <article class="summary-card">
+        <span class="summary-card__label">Localidade</span>
+        <strong class="summary-card__value">{{ localidadeAtual }}</strong>
       </article>
     </div>
     }

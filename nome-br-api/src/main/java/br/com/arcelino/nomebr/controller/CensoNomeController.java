@@ -26,16 +26,19 @@ public class CensoNomeController {
     CensoNomeService censoIbgeNomeService;
 
     @GetMapping("/ranking-nomes")
-    public ResponseEntity<List<ResultadoRanking>> getRankingNome() {
-        return ResponseEntity.ok(censoIbgeNomeService.getRankingNome());
+    public ResponseEntity<List<ResultadoRanking>> getRankingNome(
+            @RequestParam(required = false) String sexo,
+            @RequestParam(required = false) Integer localidade
+
+    ) {
+        return ResponseEntity.ok(censoIbgeNomeService.getRankingNome(sexo, localidade));
     }
 
     @GetMapping("/frequencia-nomes/{nome}")
     public ResponseEntity<List<ResultadoNomeFrequencia>> getFrequenciaNome(
             @PathVariable String nome,
             @RequestParam(required = false) String sexo,
-            @RequestParam(required = false) Integer localidade
-    ) {
+            @RequestParam(required = false) Integer localidade) {
         return ResponseEntity.ok(censoIbgeNomeService.getFrequenciaNome(nome, sexo, localidade));
     }
 

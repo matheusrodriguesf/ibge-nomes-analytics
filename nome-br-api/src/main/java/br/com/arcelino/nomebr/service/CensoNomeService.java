@@ -20,9 +20,9 @@ public class CensoNomeService {
 
     CensoIbgeNomeClient censoIbgeNomeClient;
 
-    public List<ResultadoRanking> getRankingNome() {
-        log.info("Buscando ranking de nomes no Censo IBGE");
-        return censoIbgeNomeClient.getRankingNome();
+    public List<ResultadoRanking> getRankingNome(String sexo, Integer localidade) {
+        log.info("Buscando ranking de nomes com sexo '{}' e localidade '{}' no Censo IBGE", sexo, localidade);
+        return censoIbgeNomeClient.getRankingNome(sexo, localidade);
     }
 
     public List<ResultadoNomeFrequencia> getFrequenciaNome(String nome, String sexo, Integer localidade) {

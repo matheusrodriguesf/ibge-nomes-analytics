@@ -14,7 +14,9 @@ import br.com.arcelino.nomebr.model.censo.ResultadoRanking;
 public interface CensoIbgeNomeClient {
 
     @GetMapping("/ranking")
-    List<ResultadoRanking> getRankingNome();
+    List<ResultadoRanking> getRankingNome(
+            @RequestParam(required = false) String sexo,
+            @RequestParam(required = false) Integer localidade);
 
     @GetMapping("/{nome}")
     List<ResultadoNomeFrequencia> getFrequenciaNome(

@@ -3,10 +3,12 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  DestroyRef,
   ElementRef,
   inject,
   viewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import * as d3 from 'd3';
 import { CensoNomeService } from '../../services/censo.nome.service';
 import { RankingNomeItem } from '../../models/resultado-nome-ranking';
@@ -16,6 +18,13 @@ import {
   TableValue,
 } from '../../shared/components/paginated-table/paginated-table';
 import { PageEvent } from '@angular/material/paginator';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatButtonModule } from '@angular/material/button';
+import { LocalidadeService } from '../../services/localidade.service';
+import { SelectEstadoItem } from '../../models/select-estado-item';
+import { SelectDistritoItem } from '../../models/select-distrito-item';
 
 type ChartDatum = {
   name: string;
@@ -23,12 +32,20 @@ type ChartDatum = {
   rank: number;
 };
 
+type SexoOption = 'M' | 'F';
+
 @Component({
   selector: 'app-ranking-nome',
   standalone: true,
   templateUrl: './ranking-nome.html',
   styleUrl: './ranking-nome.scss',
-  imports: [PaginatedTable],
+  imports: [
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatButtonModule,
+    PaginatedTable,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RankingNomeComponent {
@@ -39,6 +56,13 @@ export class RankingNomeComponent {
   private readonly donutChartContainer = viewChild<ElementRef<HTMLDivElement>>('donutChartContainer');
 
   private chartData: ChartDatum[] = [];
+  private municipiosRequestId = 0;
+
+  readonly searchForm = new FormGroup({
+    sexo: new FormControl<SexoOption | null>(null),
+    estadoId: new FormControl<number | null>(null),
+    municipioId: new FormControl<number | null>({ value: null, disabled: true }),
+  });
 
   readonly columns: PaginatedTableColumn[] = [
     { key: 'ranking', header: 'Ranking', align: 'end' },
@@ -52,18 +76,67 @@ export class RankingNomeComponent {
   topNomes: RankingNomeItem[] = [];
   tableData: Record<string, TableValue>[] = [];
   pagedTableData: Record<string, TableValue>[] = [];
+  isLoading = false;
+  estados: SelectEstadoItem[] = [];
+  municipios: SelectDistritoItem[] = [];
+  readonly sexoOptions: Array<{ value: SexoOption; label: string }> = [
+    { value: 'F', label: 'Feminino' },
+    { value: 'M', label: 'Masculino' },
+  ];
 
   private readonly censoNomeService = inject(CensoNomeService);
+  private readonly localidadeService = inject(LocalidadeService);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
+    this.searchForm.controls.estadoId.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((estadoId) => {
+        void this.onEstadoChange(estadoId);
+      });
+
+    void this.loadEstados();
+
     afterNextRender(() => {
-      void this.loadRankingNome();
+      void this.onApplyFilters();
     });
   }
 
+  async onApplyFilters(): Promise<void> {
+    this.isLoading = true;
+    this.searchForm.disable({ emitEvent: false });
+    this.changeDetectorRef.markForCheck();
+
+    try {
+      await this.loadRankingNome();
+    } finally {
+      this.isLoading = false;
+      this.searchForm.enable({ emitEvent: false });
+
+      if (!this.searchForm.controls.estadoId.value) {
+        this.searchForm.controls.municipioId.disable({ emitEvent: false });
+      }
+
+      this.changeDetectorRef.markForCheck();
+    }
+  }
+
+  async onClearFilters(): Promise<void> {
+    this.searchForm.controls.sexo.setValue(null);
+    this.searchForm.controls.estadoId.setValue(null);
+    this.searchForm.controls.municipioId.setValue(null, { emitEvent: false });
+    this.searchForm.controls.municipioId.disable({ emitEvent: false });
+    this.municipios = [];
+    await this.onApplyFilters();
+  }
+
   private async loadRankingNome(): Promise<void> {
-    const rankingResponse = await this.censoNomeService.getRankingNome();
+    const localidadeSelecionada = this.searchForm.controls.municipioId.value ?? this.searchForm.controls.estadoId.value;
+    const rankingResponse = await this.censoNomeService.getRankingNome(
+      localidadeSelecionada,
+      this.searchForm.controls.sexo.value,
+    );
     const [primeiro] = Array.isArray(rankingResponse) ? rankingResponse : [];
     const resultado = Array.isArray(primeiro?.resultado) ? primeiro.resultado : [];
     this.topNomes = resultado;
@@ -84,8 +157,8 @@ export class RankingNomeComponent {
     this.updatePagedData();
     this.changeDetectorRef.detectChanges();
     this.renderCharts();
-
   }
+
   onPageChange(event: PageEvent): void {
     this.pageIndex = event.pageIndex;
     this.pageSize = event.pageSize;
@@ -102,6 +175,38 @@ export class RankingNomeComponent {
 
   formatNumber(value: number): string {
     return this.numberFormatter.format(value);
+  }
+
+  private async loadEstados(): Promise<void> {
+    const estados = await this.localidadeService.getAllEstados();
+    this.estados = [...estados].sort((first, second) => first.nome.localeCompare(second.nome, 'pt-BR'));
+    this.changeDetectorRef.markForCheck();
+  }
+
+  private async onEstadoChange(estadoId: number | null): Promise<void> {
+    this.municipiosRequestId += 1;
+    const requestId = this.municipiosRequestId;
+
+    this.municipios = [];
+    this.searchForm.controls.municipioId.reset(null, { emitEvent: false });
+
+    if (!estadoId) {
+      this.searchForm.controls.municipioId.disable({ emitEvent: false });
+      this.changeDetectorRef.markForCheck();
+      return;
+    }
+
+    this.searchForm.controls.municipioId.enable({ emitEvent: false });
+    this.changeDetectorRef.markForCheck();
+
+    const municipios = await this.localidadeService.getDistritosByEstado(estadoId);
+
+    if (requestId !== this.municipiosRequestId) {
+      return;
+    }
+
+    this.municipios = [...municipios].sort((first, second) => first.nome.localeCompare(second.nome, 'pt-BR'));
+    this.changeDetectorRef.markForCheck();
   }
 
   private updatePagedData(): void {

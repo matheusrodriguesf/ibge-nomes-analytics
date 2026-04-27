@@ -8,6 +8,52 @@
       </p>
     </div>
 
+    <form class="filters-form" [formGroup]="searchForm">
+      <div class="filters-grid">
+        <mat-form-field class="filter-field">
+          <mat-label>Sexo</mat-label>
+          <mat-select formControlName="sexo">
+            <mat-option [value]="null">Todos</mat-option>
+            @for (sexoOption of sexoOptions; track sexoOption.value) {
+            <mat-option [value]="sexoOption.value">{{ sexoOption.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="filter-field">
+          <mat-label>Estado</mat-label>
+          <mat-select formControlName="estadoId">
+            <mat-option [value]="null">Todos os estados</mat-option>
+            @for (estado of estados; track estado.id) {
+            <mat-option [value]="estado.id">{{ estado.nome }} ({{ estado.sigla }})</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="filter-field">
+          <mat-label>Município</mat-label>
+          <mat-select formControlName="municipioId">
+            <mat-option [value]="null">Todos os municípios do estado</mat-option>
+            @for (municipio of municipios; track municipio.ibge) {
+            <mat-option [value]="municipio.ibge">{{ municipio.nome }}</mat-option>
+            }
+          </mat-select>
+          @if (!searchForm.controls.estadoId.value) {
+          <mat-hint>Selecione um estado para carregar os municípios.</mat-hint>
+          }
+        </mat-form-field>
+
+        <div class="form-actions">
+          <button type="button" mat-flat-button (click)="onApplyFilters()" [disabled]="isLoading">
+            Pesquisar
+          </button>
+          <button type="button" mat-stroked-button (click)="onClearFilters()" [disabled]="isLoading">
+            Limpar
+          </button>
+        </div>
+      </div>
+    </form>
+
     <div class="summary-grid">
 
       <article class="summary-card">

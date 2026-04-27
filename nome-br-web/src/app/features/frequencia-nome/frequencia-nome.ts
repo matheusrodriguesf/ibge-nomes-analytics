@@ -15,7 +15,6 @@ import { FrequenciaNome } from '../../models/resultado-nome-frequencia';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { PageEvent } from '@angular/material/paginator';
@@ -38,7 +37,6 @@ type SexoOption = 'M' | 'F';
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
-    MatIconModule,
     MatButtonModule,
     MatSelectModule,
     PaginatedTable,
@@ -113,6 +111,7 @@ export class FrequenciaNomeComponent {
     const nomeNormalizado = this.searchForm.controls.nome.value.trim().toUpperCase();
 
     if (!nomeNormalizado) {
+      this.clearResults();
       return;
     }
 
@@ -120,6 +119,16 @@ export class FrequenciaNomeComponent {
     this.sexoAtual = this.searchForm.controls.sexo.value;
     this.searchForm.controls.nome.setValue(nomeNormalizado, { emitEvent: false });
     await this.loadFrequenciaNome();
+  }
+
+  onClear(): void {
+    this.searchForm.controls.nome.setValue('');
+    this.searchForm.controls.sexo.setValue(null);
+    this.searchForm.controls.estadoId.setValue(null);
+    this.searchForm.controls.municipioId.setValue(null, { emitEvent: false });
+    this.searchForm.controls.municipioId.disable({ emitEvent: false });
+    this.municipios = [];
+    this.clearResults();
   }
 
   get sexoAtualLabel(): string {
@@ -167,6 +176,22 @@ export class FrequenciaNomeComponent {
   private updatePagedData(): void {
     const start = this.pageIndex * this.pageSize;
     this.pagedTableData = this.tableData.slice(start, start + this.pageSize);
+  }
+
+  private clearResults(): void {
+    this.nomeAtual = '';
+    this.sexoAtual = null;
+    this.frequenciaData = [];
+    this.tableData = [];
+    this.pagedTableData = [];
+    this.pageIndex = 0;
+
+    const timelineContainer = this.timelineContainer()?.nativeElement;
+    if (timelineContainer) {
+      d3.select(timelineContainer).selectAll('*').remove();
+    }
+
+    this.changeDetectorRef.markForCheck();
   }
 
   private async loadEstados(): Promise<void> {

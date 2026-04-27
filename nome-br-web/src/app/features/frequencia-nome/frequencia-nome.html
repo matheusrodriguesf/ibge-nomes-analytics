@@ -11,9 +11,6 @@
         <mat-form-field class="search-field">
           <mat-label>Digite o nome que deseja consultar</mat-label>
           <input matInput placeholder="Ex. João" formControlName="nome" />
-          <button type="submit" mat-icon-button matSuffix aria-label="Pesquisar">
-            <mat-icon>search</mat-icon>
-          </button>
         </mat-form-field>
 
         <mat-form-field class="filter-field">
@@ -48,6 +45,11 @@
           <mat-hint>Selecione um estado para carregar os municípios.</mat-hint>
           }
         </mat-form-field>
+
+        <div class="form-actions">
+          <button type="submit" mat-flat-button>Pesquisar</button>
+          <button type="button" mat-stroked-button (click)="onClear()">Limpar</button>
+        </div>
       </div>
     </form>
 

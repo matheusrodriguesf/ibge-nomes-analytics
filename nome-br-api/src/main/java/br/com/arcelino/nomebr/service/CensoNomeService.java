@@ -25,8 +25,9 @@ public class CensoNomeService {
         return censoIbgeNomeClient.getRankingNome();
     }
 
-    public List<ResultadoNomeFrequencia> getFrequenciaNome(String nome, String sexo) {
-        log.info("Buscando frequência do nome '{}' com sexo '{}' no Censo IBGE", nome, sexo);
-        return censoIbgeNomeClient.getFrequenciaNome(nome, sexo);
+    public List<ResultadoNomeFrequencia> getFrequenciaNome(String nome, String sexo, Integer localidade) {
+        log.info("Buscando frequência do nome '{}' com sexo '{}' e localidade '{}' no Censo IBGE", nome, sexo,
+                localidade);
+        return censoIbgeNomeClient.getFrequenciaNome(nome, sexo, localidade);
     }
 }

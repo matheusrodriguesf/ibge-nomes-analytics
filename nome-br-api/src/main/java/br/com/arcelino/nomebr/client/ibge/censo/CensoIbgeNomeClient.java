@@ -17,7 +17,9 @@ public interface CensoIbgeNomeClient {
     List<ResultadoRanking> getRankingNome();
 
     @GetMapping("/{nome}")
-    List<ResultadoNomeFrequencia> getFrequenciaNome(@PathVariable String nome,
-            @RequestParam(required = false) String sexo);
+    List<ResultadoNomeFrequencia> getFrequenciaNome(
+            @PathVariable String nome,
+            @RequestParam(required = false) String sexo,
+            @RequestParam(required = false) Integer localidade);
 
 }

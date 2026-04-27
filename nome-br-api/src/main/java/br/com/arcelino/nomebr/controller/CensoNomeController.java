@@ -33,8 +33,10 @@ public class CensoNomeController {
     @GetMapping("/frequencia-nomes/{nome}")
     public ResponseEntity<List<ResultadoNomeFrequencia>> getFrequenciaNome(
             @PathVariable String nome,
-            @RequestParam(required = false) String sexo) {
-        return ResponseEntity.ok(censoIbgeNomeService.getFrequenciaNome(nome, sexo));
+            @RequestParam(required = false) String sexo,
+            @RequestParam(required = false) Integer localidade
+    ) {
+        return ResponseEntity.ok(censoIbgeNomeService.getFrequenciaNome(nome, sexo, localidade));
     }
 
 }

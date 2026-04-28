@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+  backend:
+    build:
+      context: ./nome-br-api
+      dockerfile: Dockerfile
+    container_name: nome-br-api
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./nome-br-web
+      dockerfile: Dockerfile
+    container_name: nome-br-web
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

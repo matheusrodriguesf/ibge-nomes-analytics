@@ -29,9 +29,32 @@ O código-fonte está localizado em `nome-br-web/`.
 
 ---
 
+
 ## Como subir a aplicação
 
-### 1. Subir o backend (Spring Boot)
+### Subindo com Docker Compose
+
+1. Certifique-se de estar na raiz do projeto (onde está o arquivo `docker-compose.yaml`).
+2. Execute os comandos abaixo:
+
+```bash
+docker compose build --no-cache
+docker compose up -d
+```
+
+O frontend estará disponível em [http://localhost](http://localhost) e o backend em [http://localhost:8080](http://localhost:8080).
+
+Para parar os containers:
+
+```bash
+docker compose down
+```
+
+---
+
+### Subir manualmente (sem Docker)
+
+#### 1. Subir o backend (Spring Boot)
 
 ```bash
 cd nome-br-api
